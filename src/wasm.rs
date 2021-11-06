@@ -11,13 +11,15 @@ pub fn apply_js_plugin(
 ) -> Result<Program, Error> {
     (|| -> Result<_, Error> {
         let engine = Engine::default();
-        let module = wasmtime::Module::from_file(&engine, path)?;
+        let module =
+            wasmtime::Module::from_file(&engine, path).context("failed to load wasm file")?;
 
         let ast_serde = serialize_ast(&program).context("failed to serialize ast")?;
 
         let mut store = Store::new(&engine, 4);
 
-        let instance = Instance::new(&mut store, &module, &[])?;
+        let instance = Instance::new(&mut store, &module, &[])
+            .context("failed to create instance of a wasm module")?;
 
         let ast_ref = ExternRef::new(ast_serde);
         let config_ref = ExternRef::new(config_json.to_string());
