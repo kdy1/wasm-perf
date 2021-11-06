@@ -1,10 +1,12 @@
 [package]
-name = "plugin-wasm"
-version = "0.1.0"
 edition = "2021"
+name = "common"
+publish = false
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-common = { path = "../common/" }
-plugin = { path = "../plugin" }
+anyhow = "1.0.45"
+serde = "1.0.130"
+serde_json = "1.0.69"
