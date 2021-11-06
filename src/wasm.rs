@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Error};
+use anyhow::{Context, Error};
 use common::{deserialize_ast, serialize_ast};
 use std::path::Path;
 use swc_ecmascript::ast::Program;

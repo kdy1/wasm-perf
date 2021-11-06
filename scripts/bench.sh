@@ -3,3 +3,5 @@ set -eu
 
 ./scripts/build-wasm.sh
 ./scripts/build-dylib.sh
+
+cargo bench

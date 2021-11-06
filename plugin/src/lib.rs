@@ -2,7 +2,7 @@ use serde::Deserialize;
 use swc_common::{BytePos, Span};
 use swc_ecmascript::visit::{noop_fold_type, Fold};
 
-pub fn transform(config: Config) -> impl Fold {
+pub fn transform(_config: Config) -> impl Fold {
     TestPlugin
 }
 
