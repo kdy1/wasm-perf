@@ -1,8 +1,9 @@
 use anyhow::{Context, Error};
 use common::{deserialize_ast, serialize_ast};
+use once_cell::sync::Lazy;
 use std::path::Path;
 use swc_ecmascript::ast::Program;
-use wasmtime::{Engine, Instance, Memory, Store};
+use wasmtime::{Engine, Instance, Memory, Module, OptLevel, Store};
 
 fn alloc(
     instance: &Instance,
@@ -31,16 +32,26 @@ fn alloc(
     return Ok(guest_ptr_offset);
 }
 
+pub fn load(path: &Path) -> Result<(Engine, Module), Error> {
+    let engine = Engine::new(
+        &wasmtime::Config::new()
+            .async_support(false)
+            .cranelift_opt_level(OptLevel::Speed)
+            .debug_info(false),
+    )
+    .unwrap();
+    let module = wasmtime::Module::from_file(&engine, path).context("failed to load wasm file")?;
+
+    Ok((engine, module))
+}
+
 pub fn apply_js_plugin(
-    path: &Path,
+    engine: &Engine,
+    module: &Module,
     config_json: &str,
     program: &Program,
 ) -> Result<Program, Error> {
     (|| -> Result<_, Error> {
-        let engine = Engine::default();
-        let module =
-            wasmtime::Module::from_file(&engine, path).context("failed to load wasm file")?;
-
         let ast_serde = serialize_ast(&program).context("failed to serialize ast")?;
 
         let mut store = Store::new(&engine, ());
@@ -80,10 +91,5 @@ pub fn apply_js_plugin(
 
         Ok(new)
     })()
-    .with_context(|| {
-        format!(
-            "failed to invoke `{}` as js transform plugin",
-            path.display()
-        )
-    })
+    .with_context(|| format!("failed to invoke js transform plugin",))
 }
