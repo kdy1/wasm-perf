@@ -14,7 +14,7 @@ use wasm_perf::{dylib, wasm};
 
 fn input() -> Program {
     testing::run_test(false, |cm, _handler| {
-        let fm = cm.load_file(Path::new("assets/input.js")).unwrap();
+        let fm = cm.load_file(Path::new("benches/input.js")).unwrap();
 
         let lexer = Lexer::new(
             Default::default(),
