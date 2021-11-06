@@ -1,7 +1,8 @@
+use serde::Deserialize;
 use swc_common::{BytePos, Span};
 use swc_ecmascript::visit::{noop_fold_type, Fold};
 
-pub fn transform() -> impl Fold {
+pub fn transform(config: Config) -> impl Fold {
     TestPlugin
 }
 
@@ -16,3 +17,6 @@ impl Fold for TestPlugin {
         span
     }
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Config {}
