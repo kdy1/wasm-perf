@@ -9,6 +9,7 @@ use swc_common::input::SourceFileInput;
 use swc_ecmascript::{
     ast::{EsVersion, Program},
     parser::{lexer::Lexer, Parser},
+    visit::FoldWith,
 };
 use test::Bencher;
 use wasm_perf::{dylib, wasm};
@@ -42,6 +43,19 @@ fn serde(b: &mut Bencher) {
         let s = black_box(s);
 
         let new: Program = deserialize_ast(&s).unwrap();
+
+        black_box(new);
+    })
+}
+
+/// Benchmark for time used by serde
+#[bench]
+fn direct_no_serde(b: &mut Bencher) {
+    let program = input();
+    b.iter(|| {
+        let program = program.clone();
+        let mut v = plugin::transform(plugin::Config {});
+        let new = program.fold_with(&mut v);
 
         black_box(new);
     })
