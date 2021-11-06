@@ -3,6 +3,7 @@
 
 extern crate test;
 
+use common::{deserialize_ast, serialize_ast};
 use std::{hint::black_box, path::Path};
 use swc_common::input::SourceFileInput;
 use swc_ecmascript::{
@@ -29,6 +30,21 @@ fn input() -> Program {
         Ok(program)
     })
     .unwrap()
+}
+
+/// Benchmark for time used by serde
+#[bench]
+fn serde(b: &mut Bencher) {
+    let program = input();
+    b.iter(|| {
+        let s = serialize_ast(&program).unwrap();
+
+        let s = black_box(s);
+
+        let new: Program = deserialize_ast(&s).unwrap();
+
+        black_box(new);
+    })
 }
 
 #[bench]
