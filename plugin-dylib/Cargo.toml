@@ -5,12 +5,15 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 abi_stable = "0.10.3"
 anyhow = "1.0.45"
-common = { path = "../common/" }
+common = {path = "../common/"}
 plugin = {path = "../plugin"}
 plugin-dylib-api = {path = "../plugin-dylib-api/"}
 serde = "1.0.130"
 serde_json = "1.0.69"
-swc_ecmascript = { version = "0.85.0", features = ["visit"] }
+swc_ecmascript = {version = "0.85.0", features = ["visit"]}
