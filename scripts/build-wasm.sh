@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-(cd plugin-wasm && wasm-pack build --release)
+(cd plugin-wasm && cargo wasi build --release)
 
-ls -al plugin-wasm/pkg/*.wasm
+ls -al target/wasm32-wasi/release/*.wasm
