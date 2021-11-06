@@ -35,7 +35,12 @@ fn input() -> Program {
 fn dylib(b: &mut Bencher) {
     let program = input();
     b.iter(|| {
-        let new = dylib::apply_js_plugin(Path::new("target/release/"), "{}", &program).unwrap();
+        let new = dylib::apply_js_plugin(
+            Path::new("target/release/libplugin_dylib.dylib"),
+            "{}",
+            &program,
+        )
+        .unwrap();
 
         black_box(new);
     })
@@ -46,7 +51,7 @@ fn wasm(b: &mut Bencher) {
     let program = input();
     b.iter(|| {
         let new = wasm::apply_js_plugin(
-            Path::new("plugin-wasm/pkg/plugin_wasm_wasm_bg.wasm"),
+            Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm"),
             "{}",
             &program,
         )
