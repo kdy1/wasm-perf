@@ -4,4 +4,4 @@ set -eu
 ./scripts/build-wasm.sh
 ./scripts/build-dylib.sh
 
-cargo bench --bench bench
+cargo instruments --release -t time --bench instrument
