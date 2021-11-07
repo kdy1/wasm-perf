@@ -1,15 +1,11 @@
 #![feature(bench_black_box)]
-#![feature(test)]
 
-extern crate test;
-
-use std::{hint::black_box, path::Path};
+use std::{env, hint::black_box, path::Path};
 use swc_common::input::SourceFileInput;
 use swc_ecmascript::{
     ast::{EsVersion, Program},
     parser::{lexer::Lexer, Parser},
 };
-use test::Bencher;
 use wasm_perf::{dylib, wasm};
 
 fn input() -> Program {
@@ -31,11 +27,20 @@ fn input() -> Program {
     .unwrap()
 }
 
-#[bench]
-fn dylib(b: &mut Bencher) {
+fn main() {
     let program = input();
-    b.iter(|| {
-        for _ in 0..30 {
+
+    if env::var("WASM").unwrap_or_default() == "1" {
+        let (engine, module) =
+            wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
+
+        for _ in 0..100 {
+            let new = wasm::apply_js_plugin(&engine, &module, "{}", &program).unwrap();
+
+            black_box(new);
+        }
+    } else {
+        for _ in 0..100 {
             let new = dylib::apply_js_plugin(
                 Path::new("target/release/libplugin_dylib.dylib"),
                 "{}",
@@ -45,18 +50,5 @@ fn dylib(b: &mut Bencher) {
 
             black_box(new);
         }
-    })
-}
-
-#[bench]
-fn wasm(b: &mut Bencher) {
-    let (engine, module) = wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
-    let program = input();
-    b.iter(|| {
-        for _ in 0..30 {
-            let new = wasm::apply_js_plugin(&engine, &module, "{}", &program).unwrap();
-
-            black_box(new);
-        }
-    })
+    }
 }
