@@ -1,6 +1,6 @@
 #![feature(bench_black_box)]
 
-use std::{env, hint::black_box, path::Path};
+use std::{env, hint::black_box, path::Path, time::Instant};
 use swc_common::input::SourceFileInput;
 use swc_ecmascript::{
     ast::{EsVersion, Program},
@@ -30,6 +30,8 @@ fn input() -> Program {
 fn main() {
     let program = input();
 
+    let now = Instant::now();
+
     if env::var("WASM").unwrap_or_default() == "1" {
         let instance = wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
 
@@ -50,4 +52,6 @@ fn main() {
             black_box(new);
         }
     }
+
+    eprintln!("Done in {:?}", now.elapsed());
 }
