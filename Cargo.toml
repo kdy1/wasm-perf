@@ -25,7 +25,6 @@ swc_ecmascript = {version = "0.85.0", features = ["parser"]}
 swc_node_base = "0.5.1"
 wasmer = "2.1.1"
 wasmer-wasi = "2.1.1"
-wasmtime = "0.31.0"
 
 [dev-dependencies]
 testing = "0.15.1"

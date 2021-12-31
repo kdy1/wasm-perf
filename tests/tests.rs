@@ -38,7 +38,7 @@ fn dylib() {
 
 #[test]
 fn wasm() {
-    let (engine, module) = wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
+    let instance = wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
     let program = input();
-    let _new = wasm::apply_js_plugin(&engine, &module, "{}", &program).unwrap();
+    let _new = wasm::apply_js_plugin(&instance, "{}", &program).unwrap();
 }

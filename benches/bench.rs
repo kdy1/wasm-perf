@@ -78,10 +78,10 @@ fn dylib(b: &mut Bencher) {
 
 #[bench]
 fn wasm(b: &mut Bencher) {
-    let (engine, module) = wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
+    let instance = wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
     let program = input();
     b.iter(|| {
-        let new = wasm::apply_js_plugin(&engine, &module, "{}", &program).unwrap();
+        let new = wasm::apply_js_plugin(&instance, "{}", &program).unwrap();
 
         black_box(new);
     })

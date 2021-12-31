@@ -3,14 +3,10 @@ use common::{deserialize_ast, serialize_ast};
 use once_cell::sync::Lazy;
 use std::path::Path;
 use swc_ecmascript::ast::Program;
-use wasmtime::{Engine, Instance, Memory, Module, OptLevel, Store};
+use wasmer::{Instance, Memory, Store, Value};
+use wasmer_wasi::{Pipe, WasiState};
 
-fn alloc(
-    instance: &Instance,
-    store: &mut Store<()>,
-    memory: &Memory,
-    bytes: &[u8],
-) -> Result<isize, Error> {
+fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Error> {
     // The module is not using any bindgen libraries,
     // so it should export its own alloc function.
     //
@@ -19,68 +15,72 @@ fn alloc(
     // The result is an offset relative to the module's linear memory,
     // which is used to copy the bytes into the module's memory.
     // Then, return the offset.
-    let alloc = instance
-        .get_typed_func::<u32, u32, _>(&mut *store, "__wbindgen_malloc")
-        .expect("expected alloc function not found");
-    let alloc_result = alloc.call(&mut *store, bytes.len() as _)?;
 
-    let guest_ptr_offset = alloc_result as isize;
+    let alloc = instance
+        .exports
+        .get_function("__wbindgen_malloc")
+        .expect("expected alloc function not found");
+
+    let alloc_result = alloc.call(&[Value::I32(bytes.len() as _)])?;
+
+    let guest_ptr_offset = match &alloc_result[0] {
+        Value::I32(offset) => *offset as _,
+        _ => return Err(anyhow::anyhow!("expected i32 result")),
+    };
     unsafe {
-        let raw = memory.data_ptr(&*store).offset(guest_ptr_offset);
+        let raw = memory.data_ptr().offset(guest_ptr_offset);
         raw.copy_from(bytes.as_ptr(), bytes.len());
     }
     return Ok(guest_ptr_offset);
 }
 
-pub fn load(path: &Path) -> Result<(Engine, Module), Error> {
-    let engine = Engine::new(
-        &wasmtime::Config::new()
-            .async_support(false)
-            .cranelift_opt_level(OptLevel::Speed)
-            .debug_info(false),
-    )
-    .unwrap();
-    let module = wasmtime::Module::from_file(&engine, path).context("failed to load wasm file")?;
+pub fn load(path: &Path) -> Result<Instance, Error> {
+    let store = Store::default();
 
-    Ok((engine, module))
+    let module = wasmer::Module::from_file(&store, path)?;
+
+    let output = Pipe::new();
+    let input = Pipe::new();
+
+    let mut wasi_env = WasiState::new("Lapce")
+        .stdin(Box::new(input))
+        .stdout(Box::new(output))
+        .finalize()?;
+    let wasi = wasi_env.import_object(&module)?;
+
+    let instance = Instance::new(&module, &wasi)?;
+
+    Ok(instance)
 }
 
 pub fn apply_js_plugin(
-    engine: &Engine,
-    module: &Module,
+    instance: &Instance,
     config_json: &str,
     program: &Program,
 ) -> Result<Program, Error> {
     (|| -> Result<_, Error> {
         let ast_serde = serialize_ast(&program).context("failed to serialize ast")?;
 
-        let mut store = Store::new(&engine, ());
-
-        let instance = Instance::new(&mut store, &module, &[])
-            .context("failed to create instance of a wasm module")?;
-
         let ret_ptr = instance
-            .get_typed_func::<i32, i32, _>(&mut store, "__wbindgen_add_to_stack_pointer")?
-            .call(&mut store, -16)?;
+            .exports
+            .get_function("__wbindgen_add_to_stack_pointer")?
+            .call(&[Value::I32(-16)])?;
 
-        let mem = instance.get_memory(&mut store, "memory").unwrap();
-        let ast_ptr = alloc(&instance, &mut store, &mem, &ast_serde)?;
-        let config_ptr = alloc(&instance, &mut store, &mem, &config_json.as_bytes())?;
+        let mem = instance.exports.get_memory("memory")?;
 
-        let plugin_fn =
-            instance.get_typed_func::<(i32, i32, i32, i32, i32), (), _>(&mut store, "process")?;
+        let ast_ptr = alloc(&instance, &mem, &ast_serde)?;
+        let config_ptr = alloc(&instance, &mem, &config_json.as_bytes())?;
+
+        let plugin_fn = instance.exports.get_function("process")?;
 
         plugin_fn
-            .call(
-                &mut store,
-                (
-                    ret_ptr,
-                    ast_ptr as _,
-                    ast_serde.len() as _,
-                    config_ptr as _,
-                    config_json.as_bytes().len() as _,
-                ),
-            )
+            .call(&[
+                ret_ptr[0].clone(),
+                Value::I32(ast_ptr as _),
+                Value::I32(ast_serde.len() as _),
+                Value::I32(config_ptr as _),
+                Value::I32(config_json.as_bytes().len() as _),
+            ])
             .context("failed to invoke `process`")?;
 
         // TODO: Actually use the return value
