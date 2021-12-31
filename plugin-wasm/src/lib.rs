@@ -1,3 +1,5 @@
+extern crate swc_node_base;
+
 use common::{deserialize_ast, serialize_ast};
 use swc_ecma_ast::Program;
 use swc_ecmascript::visit::FoldWith;
