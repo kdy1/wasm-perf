@@ -4,8 +4,7 @@ use once_cell::sync::Lazy;
 use std::path::Path;
 use swc_ecmascript::ast::Program;
 use wasmer::{imports, Cranelift, Instance, Memory, Store, Value};
-use wasmer_engine_dylib::Dylib;
-use wasmer_wasi::{Pipe, WasiState};
+use wasmer_wasi::Pipe;
 
 fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Error> {
     // The module is not using any bindgen libraries,
@@ -36,16 +35,12 @@ fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Er
 }
 
 pub fn load(path: &Path) -> Result<Instance, Error> {
-    let compiler_config = Cranelift::default();
-
-    let engine = Dylib::new(compiler_config).engine();
-
-    let store = Store::new(&engine);
+    let store = Store::default();
 
     let module = wasmer::Module::from_file(&store, path)?;
 
-    let output = Pipe::new();
-    let input = Pipe::new();
+    // let output = Pipe::new();
+    // let input = Pipe::new();
 
     // let mut wasi_env = WasiState::new("Lapce")
     //     .stdin(Box::new(input))
