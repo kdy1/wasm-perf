@@ -3,7 +3,8 @@ use common::{deserialize_ast, serialize_ast};
 use once_cell::sync::Lazy;
 use std::path::Path;
 use swc_ecmascript::ast::Program;
-use wasmer::{imports, Instance, Memory, Store, Value};
+use wasmer::{imports, Cranelift, Instance, Memory, Store, Value};
+use wasmer_engine_dylib::Dylib;
 use wasmer_wasi::{Pipe, WasiState};
 
 fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Error> {
@@ -35,7 +36,11 @@ fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Er
 }
 
 pub fn load(path: &Path) -> Result<Instance, Error> {
-    let store = Store::default();
+    let compiler_config = Cranelift::default();
+
+    let engine = Dylib::new(compiler_config).engine();
+
+    let store = Store::new(&engine);
 
     let module = wasmer::Module::from_file(&store, path)?;
 

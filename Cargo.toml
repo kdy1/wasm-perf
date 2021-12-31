@@ -23,7 +23,8 @@ swc_atoms = "0.2.9"
 swc_common = "0.14.5"
 swc_ecmascript = {version = "0.85.0", features = ["parser"]}
 swc_node_base = "0.5.1"
-wasmer = "2.1.1"
+wasmer = {version = "2.1.1", features = ["wasmer-engine-dylib"]}
+wasmer-engine-dylib = "2.1.1"
 wasmer-wasi = "2.1.1"
 
 [dev-dependencies]
