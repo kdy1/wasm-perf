@@ -3,7 +3,7 @@ use common::{deserialize_ast, serialize_ast};
 use once_cell::sync::Lazy;
 use std::path::Path;
 use swc_ecmascript::ast::Program;
-use wasmer::{Instance, Memory, Store, Value};
+use wasmer::{imports, Instance, Memory, Store, Value};
 use wasmer_wasi::{Pipe, WasiState};
 
 fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Error> {
@@ -42,13 +42,16 @@ pub fn load(path: &Path) -> Result<Instance, Error> {
     let output = Pipe::new();
     let input = Pipe::new();
 
-    let mut wasi_env = WasiState::new("Lapce")
-        .stdin(Box::new(input))
-        .stdout(Box::new(output))
-        .finalize()?;
-    let wasi = wasi_env.import_object(&module)?;
+    // let mut wasi_env = WasiState::new("Lapce")
+    //     .stdin(Box::new(input))
+    //     .stdout(Box::new(output))
+    //     .finalize()?;
 
-    let instance = Instance::new(&module, &wasi)?;
+    let import_object = imports! {};
+
+    // let wasi = wasi_env.import_object(&module)?;
+
+    let instance = Instance::new(&module, &import_object)?;
 
     Ok(instance)
 }
