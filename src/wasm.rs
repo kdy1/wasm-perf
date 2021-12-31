@@ -37,7 +37,17 @@ fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Er
 pub fn load(path: &Path) -> Result<Instance, Error> {
     let store = Store::default();
 
-    let module = wasmer::Module::from_file(&store, path)?;
+    let cache_path = path.with_file_name("cached.swc-wasm-bytes");
+
+    let module = if cache_path.exists() {
+        unsafe { wasmer::Module::deserialize_from_file(&store, &cache_path)? }
+    } else {
+        let m = wasmer::Module::from_file(&store, path)?;
+
+        m.serialize_to_file(&cache_path)?;
+
+        m
+    };
 
     // let output = Pipe::new();
     // let input = Pipe::new();
