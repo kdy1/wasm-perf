@@ -17,3 +17,4 @@ plugin-dylib-api = {path = "../plugin-dylib-api/"}
 serde = "1.0.130"
 serde_json = "1.0.69"
 swc_ecmascript = {version = "0.85.0", features = ["visit"]}
+swc_node_base = "0.5.1"

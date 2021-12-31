@@ -1,3 +1,5 @@
+extern crate swc_node_base;
+
 use abi_stable::std_types::{RResult, RStr, RString, RVec};
 use anyhow::Context;
 use common::{deserialize_ast, serialize_ast};
