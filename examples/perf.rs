@@ -31,11 +31,10 @@ fn main() {
     let program = input();
 
     if env::var("WASM").unwrap_or_default() == "1" {
-        let (engine, module) =
-            wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
+        let instance = wasm::load(Path::new("plugin-wasm/pkg/plugin_wasm_bg.wasm")).unwrap();
 
         for _ in 0..100 {
-            let new = wasm::apply_js_plugin(&engine, &module, "{}", &program).unwrap();
+            let new = wasm::apply_js_plugin(&instance, "{}", &program).unwrap();
 
             black_box(new);
         }
