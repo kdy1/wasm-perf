@@ -1,10 +1,8 @@
-use anyhow::{Context, Error};
-use common::{deserialize_ast, serialize_ast};
-use once_cell::sync::Lazy;
 use std::path::Path;
+
+use anyhow::{Context, Error};
 use swc_ecmascript::ast::Program;
-use wasmer::{imports, Cranelift, Instance, Memory, Store, Value};
-use wasmer_wasi::Pipe;
+use wasmer::{imports, Instance, Memory, Store, Value};
 
 fn alloc(instance: &Instance, memory: &Memory, bytes: &[u8]) -> Result<isize, Error> {
     // The module is not using any bindgen libraries,
@@ -72,7 +70,8 @@ pub fn apply_js_plugin(
     program: &Program,
 ) -> Result<Program, Error> {
     (|| -> Result<_, Error> {
-        let ast_serde = serialize_ast(&program).context("failed to serialize ast")?;
+        let config = bincode::config::Configuration::standard();
+        let ast_bincode = bincode::encode_to_vec(program, config).unwrap();
 
         let ret_ptr = instance
             .exports
@@ -81,7 +80,7 @@ pub fn apply_js_plugin(
 
         let mem = instance.exports.get_memory("memory")?;
 
-        let ast_ptr = alloc(&instance, &mem, &ast_serde)?;
+        let ast_ptr = alloc(&instance, &mem, &ast_bincode)?;
         let config_ptr = alloc(&instance, &mem, &config_json.as_bytes())?;
 
         let plugin_fn = instance.exports.get_function("process")?;
@@ -90,7 +89,7 @@ pub fn apply_js_plugin(
             .call(&[
                 ret_ptr[0].clone(),
                 Value::I32(ast_ptr as _),
-                Value::I32(ast_serde.len() as _),
+                Value::I32(ast_bincode.len() as _),
                 Value::I32(config_ptr as _),
                 Value::I32(config_json.as_bytes().len() as _),
             ])
@@ -99,8 +98,8 @@ pub fn apply_js_plugin(
         // TODO: Actually use the return value
 
         // FIXME: This is wrong, but I think time will be similar
-        let new: Program = deserialize_ast(ast_serde.as_slice())
-            .with_context(|| format!("plugin generated invalid ast`"))?;
+        let (new, _len): (Program, usize) =
+            bincode::decode_from_slice(&ast_bincode[..], config).unwrap();
 
         Ok(new)
     })()

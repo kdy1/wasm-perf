@@ -14,9 +14,23 @@ parking_lot_core = "=0.8.0"
 plugin = {path = "../plugin"}
 serde = "1.0.130"
 serde_json = "1.0.69"
-swc_atoms = "0.2.9"
-swc_common = "0.14.5"
-swc_ecma_ast = "0.57.0"
-swc_ecmascript = {version = "0.85.0", features = ["visit"]}
 swc_node_base = "0.5.1"
 wasm-bindgen = "0.2.78"
+
+
+[dependencies.swc_atoms]
+git = "https://github.com/kwonoj/swc.git"
+branch = "feat-bincode-derive"
+
+[dependencies.swc_common]
+git = "https://github.com/kwonoj/swc.git"
+branch = "feat-bincode-derive"
+
+[dependencies.swc_ecma_ast]
+git = "https://github.com/kwonoj/swc.git"
+branch = "feat-bincode-derive"
+
+[dependencies.swc_ecmascript]
+git = "https://github.com/kwonoj/swc.git"
+branch = "feat-bincode-derive"
+features = ["visit"]

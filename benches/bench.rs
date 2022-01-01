@@ -66,7 +66,7 @@ fn dylib(b: &mut Bencher) {
     let program = input();
     b.iter(|| {
         let new = dylib::apply_js_plugin(
-            Path::new("target/release/libplugin_dylib.dylib"),
+            Path::new("target/release/libplugin_dylib.so"),
             "{}",
             &program,
         )
